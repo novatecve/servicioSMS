@@ -17,13 +17,11 @@ public class HelperDAO extends Database {
     }
 
     public HelperDAO(String poolName) {
-      
+        
         this.getPool(poolName);
         this.connect();
         
     }
-
-      
     
     public String getEntityTable() {
         return EntityTable;

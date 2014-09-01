@@ -17,6 +17,15 @@ public class Mensaje {
     Date    fecha;
     TipoMensaje tipoMensaje;
     Cliente     cliente;
+    String contenido;
+
+    public String getContenido() {
+        return contenido;
+    }
+
+    public void setContenido(String contenido) {
+        this.contenido = contenido;
+    }
 
     public Mensaje() {
     }
@@ -37,13 +46,13 @@ public class Mensaje {
         this.fecha = fecha;
     }
 
-    public TipoMensaje getTipoMensaje() {
+ /*   public TipoMensaje getTipoMensaje() {
         return tipoMensaje;
     }
 
     public void setTipoMensaje(TipoMensaje tipoMensaje) {
         this.tipoMensaje = tipoMensaje;
-    }
+    }*/
 
     public Cliente getCliente() {
         return cliente;

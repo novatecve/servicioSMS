@@ -10,6 +10,17 @@ import java.io.FileInputStream;
 import java.rmi.server.UID;
 import java.util.Properties;
 
+//Para manejo de JavaMail
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.swing.JOptionPane;
+
 /**
  *
  * @author akuma
@@ -44,4 +55,7 @@ public class Utility {
         return null;
         
     }
+    
+    
+    
 }

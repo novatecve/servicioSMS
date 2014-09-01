@@ -10,14 +10,14 @@ package com.siclhos.servicios.sms.domain;
  *
  * @author YasminV
  */
-public class Afiliado {
+public class CentroSalud {
     Integer id;
     String nombre;
     String telefono;
     String direccion;
     String email;
 
-    public Afiliado() {
+    public CentroSalud() {
     }
     
     public Integer getId() {

@@ -46,7 +46,8 @@ abstract class Database {
     private ResultSet result;
     private DataSource ds; ///conexion obtenida del pool
     private HashMap<String, String> dbConfigParams = new HashMap<>();
-
+    private CallableStatement cstmt;
+    
     /**
      * devuelve el numero de conexiones hechas con la clase Database
      *
@@ -246,8 +247,8 @@ abstract class Database {
 
         this.stmt.execute(sql);
 
-    }
-
+    }   
+  
     /**
      * trae el numero de filas q devuelve el query
      *
@@ -313,6 +314,7 @@ abstract class Database {
         try {
             this.result.close();
             this.stmt.close();
+            this.cstmt.close();
             this.dbc.close();
         } /////////////////////////////////////////metodos para transacciones
         catch (SQLException ex) {
@@ -394,6 +396,7 @@ abstract class Database {
      */
     public void setString(Integer pos, String Cadena) {
         try {
+            
             this.pstmt.setString(pos, Cadena);
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
@@ -513,5 +516,178 @@ abstract class Database {
         }
     }
 
+     /**
+     * usado para SELECT y operaciones que no devuelvan id
+     *
+     * @param query
+     */
+    public void prepareCall(String functionName) {
+
+        try {
+
+            this.cstmt = this.dbc.prepareCall(functionName, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public void registerOutParameter(Integer pos, Integer type) {
+        try {
+            this.cstmt.registerOutParameter(pos, type);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+        /**
+     * cierra un objeto de tipo cstmt
+     */
+    public void closeCallable() {
+        try {
+            this.cstmt.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+        /**
+     * metodos para setiar los valores
+     */
+    public void setStringCS(Integer pos, String Cadena) {
+        try {
+            
+            this.cstmt.setString(pos, Cadena);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public double getDoubleCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getDouble(pos);
+    }
+    
+    public String getStringCS(String campo) throws SQLException {
+
+        return this.result.getString(campo);
+    }
+
+    public String getStringCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getString(pos);
+    }
+
+    public Object getObjectCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getObject(pos);
+    }
+
+    
+    public void setTimestampCS(Integer pos, Date fecha) {
+        try {
+            this.cstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    public java.sql.Timestamp getTimestampCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getTimestamp(pos);
+    }
+    
+    public void setIntegerCS(Integer pos, Integer Numero) {
+        try {
+            this.cstmt.setInt(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    
+    public Integer getIntegerCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getInt(pos);
+    }
+    public void setLongCS(Integer pos, long Numero) {
+        try {
+            this.cstmt.setLong(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    
+    public Long getLongCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getLong(pos);
+    }
+    
+    public void setFloatCS(Integer pos, float Numero) {
+        try {
+            this.cstmt.setFloat(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    
+    public Long getFloatCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getLong(pos);
+    }
+      public void setDobleCS(Integer pos, double Numero) {
+        try {
+            this.cstmt.setDouble(pos, Numero);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+      
+    public Double getDobleCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getDouble(pos);
+    }
+    
+    public void setDateCS(Integer pos, Date Fecha) {
+        try {
+            //psInsertar.setDate(pos, (java.sql.Date) Fecha);
+            if (Fecha == null) {
+                this.cstmt.setDate(pos, null);
+            } else {
+                this.cstmt.setDate(pos, new java.sql.Date(Fecha.getTime()));
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    
+    public Date getDateCS(Integer pos) throws SQLException {
+
+        return this.cstmt.getDate(pos);
+    }
+
+    public void setNullCS(Integer pos, Integer tipo) {
+        try {
+            this.cstmt.setNull(pos, tipo);
+        } catch (SQLException ex) {
+            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    
+    /**
+     * Metodo que ejecuta una consulta sql diferente a insert,select,update
+     */
+    public void execute() throws SQLException {
+
+        this.cstmt.execute();
+
+    }   
+            
 }
 
