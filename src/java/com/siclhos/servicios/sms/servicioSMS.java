@@ -30,13 +30,16 @@ import javax.jws.WebService;
 import oracle.jdbc.OracleTypes;
 import com.siclhos.lib.utils.Utility;
 
+
 /**
  *
  * @author akuma
  */
 @WebService(serviceName = "servicioSMS")
 public class servicioSMS {
-
+    private Logger log = Logger.getLogger(servicioSMS.class.getName());
+    
+    
   /**
      * This is a sample web service operation
      */
@@ -53,6 +56,7 @@ public class servicioSMS {
             }
         } catch (Exception ex) {
             Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
+
         }
         return null;
     }
@@ -60,8 +64,7 @@ public class servicioSMS {
     /**
      * Web service operation
      */
-    @WebMethod(operationName = "enviarSMS")
-    public String enviarSMS(@WebParam(name = "idMensaje") int idMensaje,@WebParam(name = "tipoMensaje") int tipoMensaje,@WebParam(name = "idCliente") int idCliente,@WebParam(name = "fecha") String fecha,@WebParam(name = "estatus") int estatus) {
+    private String enviarSMS(int idMensaje, int tipoMensaje, int idCliente, String fecha, int estatus) {
         
         List objMensajes = new ArrayList<>();
         Mensaje objMensaje;
@@ -107,10 +110,11 @@ public class servicioSMS {
                result = notifierDao.crearEstado(objMensaje.getId(), estado, lote);                        
                
             }
-         } 
+         } else {
+         
+         }
 
          resultado = "SMS Exitosos: " + smsExistosos + " SMS Fallidos: "+ smsFallidos;
-         System.out.println(resultado);
 
         } catch (Exception ex) {
             Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
@@ -118,4 +122,57 @@ public class servicioSMS {
         
         return resultado;
     }
+
+    /**
+     * Web service operation
+     */
+    @WebMethod(operationName = "enviarSMSPendientes")
+    public String enviarSMSPendientes(@WebParam(name = "idMensaje") int idMensaje,@WebParam(name = "tipoMensaje") int tipoMensaje,@WebParam(name = "idCliente") int idCliente,@WebParam(name = "fecha") String fecha) {
+        
+        String resultado = new String();
+     
+        try { 
+         
+            resultado = enviarSMS(idMensaje, tipoMensaje, idCliente, fecha, 1);
+        
+        } catch (Exception ex) {
+            Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return resultado;
+    }
+    
+    @WebMethod(operationName = "enviarSMSFallidos")
+    public String enviarSMSFallidos(@WebParam(name = "idMensaje") int idMensaje,@WebParam(name = "tipoMensaje") int tipoMensaje,@WebParam(name = "idCliente") int idCliente,@WebParam(name = "fecha") String fecha) {
+        
+        String resultado = new String();
+     
+        try { 
+         
+            resultado = enviarSMS(idMensaje, tipoMensaje, idCliente, fecha, 3);
+        
+        } catch (Exception ex) {
+            Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return resultado;
+    }
+
+    @WebMethod(operationName = "reenviarSMS")
+    public String reenviarSMS(@WebParam(name = "idMensaje") int idMensaje,@WebParam(name = "tipoMensaje") int tipoMensaje,@WebParam(name = "idCliente") int idCliente,@WebParam(name = "fecha") String fecha) {
+        
+        String resultado = new String();
+     
+        try { 
+         
+            resultado = enviarSMS(idMensaje, tipoMensaje, idCliente, fecha, 4);
+        
+        } catch (Exception ex) {
+            Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return resultado;
+    }    
 }
+
+

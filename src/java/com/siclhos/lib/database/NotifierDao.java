@@ -10,7 +10,6 @@ import com.siclhos.servicios.sms.domain.Cliente;
 import com.siclhos.servicios.sms.domain.Estatus;
 import com.siclhos.servicios.sms.domain.EstatusMensaje;
 import com.siclhos.servicios.sms.domain.Mensaje;
-import com.siclhos.servicios.sms.servicioSMS;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -27,6 +26,7 @@ import oracle.jdbc.OracleTypes;
  * @author Yasbaby
  */
 public class NotifierDao extends Database {
+
 
     public NotifierDao() {
     }
@@ -52,8 +52,12 @@ public class NotifierDao extends Database {
         String mensajeError = new String();
         List objMensajes = new ArrayList<>();
         Integer valor = new Integer(0);
- 
+        ResultSet rs;
+        
        try {
+
+            Logger.getLogger(NotifierDao.class.getName()+ "idMensaje " + idMensaje+ " tipoMensaje"+tipoMensaje + " idCliente"+idCliente+" fecha"+fecha+" estatus"+estatus);
+
             // Nombre del Pool de Conexion
             HelperDAO helper = new HelperDAO("OracleDS");
             helper.prepareCall("{ ? = call PKG_SMS.F_LISTAR_MENSAJES(?,?,?,?,?,?)");
@@ -95,8 +99,9 @@ public class NotifierDao extends Database {
             helper.registerOutParameter(7,Types.VARCHAR);
             helper.execute();
             
-            ResultSet rs = (ResultSet)helper.getObjectCS(1);
-
+            if (helper.getObjectCS(7) == null) {
+            rs = (ResultSet)helper.getObjectCS(1);
+            
             while (rs.next()){
                 Mensaje objMensaje = new Mensaje();
                 Cliente objCliente = new Cliente();
@@ -120,12 +125,14 @@ public class NotifierDao extends Database {
                 
                 objMensajes.add(objMensaje);
             }
-            
+            } else {
+             Logger.getLogger(NotifierDao.class.getName() + ": Lista de mensajes vacia");
+           }
             helper.close();
             
          } catch (Exception ex) {
-            Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
-              throw new SQLException("Error al buscar la lista de mensajes:" + ex.getMessage(), ex);
+            Logger.getLogger(NotifierDao.class.getName()).log(Level.SEVERE, null, ex);
+            throw new SQLException("Error al buscar la lista de mensajes:" + ex.getMessage(), ex);
           } 
         
         return objMensajes;
@@ -156,14 +163,16 @@ public class NotifierDao extends Database {
 
             if (mensajeError == null){
                 lote = helper.getIntegerCS(1);
-            } 
+            } else {
+               throw new SQLException("Error al crear el numero del lote:" + mensajeError);
+            }
             
             helper.close();
             
             
          } catch (Exception ex) {
-            Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
-              throw new SQLException("Error al crear el numero del lote:" + ex.getMessage(), ex);
+             Logger.getLogger(NotifierDao.class.getName()).log(Level.SEVERE, null, ex);
+             throw new SQLException("Error al crear el numero del lote:" + ex.getMessage(), ex);
           }    
             return lote;
     }
@@ -177,30 +186,17 @@ public class NotifierDao extends Database {
      * @param lote Numero de lote.
      * @throws SQLException Si ocurre un error de acceso a datos.
      */
-    public  Integer crearEstado(Integer idMensaje,Integer idStatus, Integer lote) throws SQLException {
+    public Integer crearEstado(Integer idMensaje,Integer idStatus, Integer lote) throws SQLException {
         String mensajeError = new String();
         List objMensajes = new ArrayList<>();
         Integer valor = new Integer(0);
         Integer resultado = new Integer(0);        
-        
-        System.out.println(" idMensaje: " + idMensaje +" idStatus: " +idStatus +" lote: " + lote);       
-        
+      
         try {
             // Nombre del Pool de Conexion
             HelperDAO helper = new HelperDAO("OracleDS");
             helper.prepareCall("call PKG_SMS.P_INSERTA_ESTATUS_MENSAJE(?,?,?,?,?)");
             
-            /*
-               PROCEDURE P_INSERTA_ESTATUS_MENSAJE(PI_ID_MENSAJE IN CS_EX_ESTATUS_MENSAJES.ID_MENSAJE%TYPE,
-                                       PI_ID_ESTATUS IN CS_EX_ESTATUS_MENSAJES.ID_ESTATUS%TYPE,
-                                       PI_FECHA      IN CS_EX_ESTATUS_MENSAJES.FECHA%TYPE, 
-                                       PI_LOTE       IN CS_EX_ESTATUS_MENSAJES.LOTE%TYPE,
-                                       PO_ID OUT NUMBER,
-                                       PO_ERROR OUT NVARCHAR2
-                                      ) 
- 
-            
-            */
             
             if (idMensaje != null && !idMensaje.equals(valor)) {  
                helper.setIntegerCS(1,idMensaje);
@@ -228,16 +224,15 @@ public class NotifierDao extends Database {
 
             if (mensajeError == null){
                resultado = helper.getIntegerCS(4);
+            } else {
+               throw new SQLException("Error al insertar el esatus del mensaje:" + mensajeError);
             } 
 
-            System.out.println("mensajeError: "+mensajeError);
-            System.out.println("resultado: "+resultado);
-            
             helper.close();
             
          } catch (Exception ex) {
-            Logger.getLogger(servicioSMS.class.getName()).log(Level.SEVERE, null, ex);
-              throw new SQLException("Error al crear el estatus del mensaje "+idMensaje +":" + ex.getMessage(), ex);
+             Logger.getLogger(NotifierDao.class.getName()).log(Level.SEVERE, null, ex);
+             throw new SQLException("Error al crear el estatus del mensaje "+idMensaje +":" + ex.getMessage(), ex);
           }   
             return resultado;
     }

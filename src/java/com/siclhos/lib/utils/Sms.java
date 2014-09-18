@@ -23,7 +23,7 @@ import javax.mail.internet.MimeMessage;
  *
  * @author Yasbaby
  */
-public class Email {
+public class Sms {
     final String username;
     final String password;
     Properties props;
@@ -37,7 +37,7 @@ public class Email {
         return password;
     }
     
-    public Email() {
+    public Sms() {
 
                     
         // load the inputStream using the Properties
@@ -71,7 +71,7 @@ public class Email {
     }
     
     
-    public boolean enviarEmail(String destinatario, String asunto, String mensaje) {
+    public boolean enviarSMS(String destinatario, String asunto, String mensaje) {
     
         boolean result =false;
 
