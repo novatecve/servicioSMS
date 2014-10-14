@@ -47,7 +47,7 @@ abstract class Database {
     private DataSource ds; ///conexion obtenida del pool
     private HashMap<String, String> dbConfigParams = new HashMap<>();
     private CallableStatement cstmt;
-    
+
     /**
      * devuelve el numero de conexiones hechas con la clase Database
      *
@@ -75,7 +75,7 @@ abstract class Database {
 
             } catch (NullPointerException e2) {
 
-                System.out.println("No es posible leer el archivo de propiedades de conexion \n " + e2);
+                Logger.getLogger(Database.class.getName() + ":No es posible leer el archivo de propiedades de conexion \n " + e2);
 
             }
 
@@ -95,10 +95,11 @@ abstract class Database {
                     this.dbservice = propiedades.getProperty("dbservice").trim(); ///SID oracle
                 }
             } else {//sino  retornara NULL
-                System.out.print("el archivo esta vacio: " + archivo);
+                Logger.getLogger(Database.class.getName() + ":el archivo esta vacio: " + archivo);
+
             }
         } catch (IOException ex) {
-            System.out.println("No es posible leer el archivo de propiedades de conexion " + archivo);
+            Logger.getLogger(Database.class.getName() + ":No es posible leer el archivo de propiedades de conexion " + archivo);
         }
     }
 
@@ -135,6 +136,7 @@ abstract class Database {
             this.setDbPool(poolName);
         } catch (NamingException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
 
     }
@@ -195,7 +197,7 @@ abstract class Database {
             this.dbc.setAutoCommit(true);
 
         } catch (ClassNotFoundException | SQLException | NullPointerException e) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, "No se encuentra el driver de conexion necesario: " + e);
+            Logger.getLogger(Database.class.getName() + ":No se encuentra el driver de conexion necesario: " + e);
 
         };
 
@@ -247,8 +249,8 @@ abstract class Database {
 
         this.stmt.execute(sql);
 
-    }   
-  
+    }
+
     /**
      * trae el numero de filas q devuelve el query
      *
@@ -289,7 +291,8 @@ abstract class Database {
 
         } catch (SQLException e) {
 
-            System.out.println("fallo liberando resultset");
+            Logger.getLogger(Database.class.getName() + ": fallo liberando resultset");
+
             return;
 
         }
@@ -371,6 +374,7 @@ abstract class Database {
             ///trata de guardar el ultimo id insertado
 
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -388,6 +392,7 @@ abstract class Database {
 
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -396,10 +401,12 @@ abstract class Database {
      */
     public void setString(Integer pos, String Cadena) {
         try {
-            
+
             this.pstmt.setString(pos, Cadena);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -412,7 +419,9 @@ abstract class Database {
         try {
             this.pstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
 
     }
@@ -422,6 +431,7 @@ abstract class Database {
             this.pstmt.setInt(pos, Numero);
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -434,7 +444,9 @@ abstract class Database {
         try {
             this.pstmt.setLong(pos, Numero);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -447,7 +459,9 @@ abstract class Database {
         try {
             this.pstmt.setFloat(pos, Numero);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -460,7 +474,9 @@ abstract class Database {
         try {
             this.pstmt.setDouble(pos, Numero);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -478,7 +494,9 @@ abstract class Database {
                 this.pstmt.setDate(pos, new java.sql.Date(Fecha.getTime()));
             }
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -512,11 +530,13 @@ abstract class Database {
         try {
             this.pstmt.close();
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-     /**
+    /**
      * usado para SELECT y operaciones que no devuelvan id
      *
      * @param query
@@ -528,38 +548,46 @@ abstract class Database {
             this.cstmt = this.dbc.prepareCall(functionName, ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE, ResultSet.HOLD_CURSORS_OVER_COMMIT);
 
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
-    
+
     public void registerOutParameter(Integer pos, Integer type) {
         try {
             this.cstmt.registerOutParameter(pos, type);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-        /**
+    /**
      * cierra un objeto de tipo cstmt
      */
     public void closeCallable() {
         try {
             this.cstmt.close();
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-        /**
+    /**
      * metodos para setiar los valores
      */
     public void setStringCS(Integer pos, String Cadena) {
         try {
-            
+
             this.cstmt.setString(pos, Cadena);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
@@ -567,7 +595,7 @@ abstract class Database {
 
         return this.cstmt.getDouble(pos);
     }
-    
+
     public String getStringCS(String campo) throws SQLException {
 
         return this.result.getString(campo);
@@ -583,12 +611,12 @@ abstract class Database {
         return this.cstmt.getObject(pos);
     }
 
-    
     public void setTimestampCS(Integer pos, Date fecha) {
         try {
             this.cstmt.setTimestamp(pos, (fecha == null ? null : new java.sql.Timestamp(fecha.getTime())));
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
 
     }
@@ -597,61 +625,66 @@ abstract class Database {
 
         return this.cstmt.getTimestamp(pos);
     }
-    
+
     public void setIntegerCS(Integer pos, Integer Numero) {
         try {
             this.cstmt.setInt(pos, Numero);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-    
     public Integer getIntegerCS(Integer pos) throws SQLException {
 
         return this.cstmt.getInt(pos);
     }
+
     public void setLongCS(Integer pos, long Numero) {
         try {
             this.cstmt.setLong(pos, Numero);
         } catch (SQLException ex) {
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-    
     public Long getLongCS(Integer pos) throws SQLException {
 
         return this.cstmt.getLong(pos);
     }
-    
+
     public void setFloatCS(Integer pos, float Numero) {
         try {
             this.cstmt.setFloat(pos, Numero);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-    
     public Long getFloatCS(Integer pos) throws SQLException {
 
         return this.cstmt.getLong(pos);
     }
-      public void setDobleCS(Integer pos, double Numero) {
+
+    public void setDobleCS(Integer pos, double Numero) {
         try {
             this.cstmt.setDouble(pos, Numero);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-      
     public Double getDobleCS(Integer pos) throws SQLException {
 
         return this.cstmt.getDouble(pos);
     }
-    
+
     public void setDateCS(Integer pos, Date Fecha) {
         try {
             //psInsertar.setDate(pos, (java.sql.Date) Fecha);
@@ -661,11 +694,12 @@ abstract class Database {
                 this.cstmt.setDate(pos, new java.sql.Date(Fecha.getTime()));
             }
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
-    
-    
+
     public Date getDateCS(Integer pos) throws SQLException {
 
         return this.cstmt.getDate(pos);
@@ -675,11 +709,12 @@ abstract class Database {
         try {
             this.cstmt.setNull(pos, tipo);
         } catch (SQLException ex) {
+            //Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
             Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+
         }
     }
 
-    
     /**
      * Metodo que ejecuta una consulta sql diferente a insert,select,update
      */
@@ -687,7 +722,6 @@ abstract class Database {
 
         this.cstmt.execute();
 
-    }   
-            
-}
+    }
 
+}

@@ -109,6 +109,7 @@ TYPE RESULSET IS REF CURSOR;
     FUNCTION F_LISTAR_CLIENTE(PI_ID IN CS_EX_CLIENTES.ID%TYPE, 
                               PI_CEDULA IN CS_EX_CLIENTES.CEDULA%TYPE,
                               PI_CELULAR IN CS_EX_CLIENTES.CELULAR%TYPE,
+                              PI_ID_CORPORATE IN CS_EX_CENTROS_CLIENTES.ID_CORPORATE%TYPE,
                               PO_ERROR OUT NVARCHAR2
                              ) RETURN RESULSET;
 
@@ -197,7 +198,32 @@ TYPE RESULSET IS REF CURSOR;
                                PI_ID_CLIENTE      IN CS_EX_MENSAJES.ID_CLIENTE%TYPE,
                                PO_ERROR OUT NVARCHAR2                                
                                ) RETURN NUMBER;
-   
+
+  PROCEDURE P_INSERTA_UNIDAD(PI_NOMBRE IN CS_EX_UNIDAD.NOMBRE%TYPE,PO_ID OUT NUMBER,PO_ERROR OUT NVARCHAR2);
+  
+  FUNCTION F_BUSCAR_UNIDAD(PI_ID IN CS_EX_UNIDAD.ID%TYPE,
+                            PI_NOMBRE IN CS_EX_UNIDAD.NOMBRE%TYPE,    
+                            PO_ERROR OUT NVARCHAR2
+   ) RETURN RESULSET;
+
+  FUNCTION F_ARMAR_SMS(PI_TIPO_MENSAJE IN CS_EX_PLANTILLAS.ID_TIPO_MENSAJE%TYPE,
+                        PI_ID_CLIENTE IN CS_EX_CLIENTES.ID%TYPE,    
+                        PI_SERVICIO IN CS_EX_UNIDAD.ID%TYPE,
+                        PI_FECHA IN DATE
+                        ) RETURN VARCHAR;
+ 
+  PROCEDURE P_INSERTA_MENSAJE_SMS( PI_ID_TIPO_MENSAJE IN CS_EX_TIPOS_MENSAJES.ID%TYPE,
+                                   PI_CEDULA          IN CS_EX_CLIENTES.CEDULA%TYPE,
+                                   PI_NOMBRE_UNIDAD   IN CS_EX_UNIDAD.NOMBRE%TYPE, 
+                                   PO_ID OUT NUMBER,
+                                   PO_ERROR OUT NVARCHAR2
+                              );
+
+   FUNCTION F_BUSCAR_PARAMETROS(PI_ID_UNIDAD IN CS_EX_UNIDAD.ID%TYPE,
+                                PI_ID_TIPO_MENSAJE IN CS_EX_TIPOS_MENSAJES.ID%TYPE,    
+                                PO_ERROR OUT NVARCHAR2
+   ) RETURN RESULSET;
+
 END PKG_SMS;
 
 CREATE OR REPLACE PACKAGE BODY PKG_SMS AS
@@ -281,20 +307,49 @@ CREATE OR REPLACE PACKAGE BODY PKG_SMS AS
                               PI_CELULAR   IN CS_EX_CLIENTES.CELULAR%TYPE,
                               PI_DIRECCION IN CS_EX_CLIENTES.DIRECCION%TYPE,
                               PI_EMAIL     IN CS_EX_CLIENTES.EMAIL%TYPE,
+                              PI_ID_CORPORATE IN CS_EX_CENTROS_CLIENTES.ID%TYPE,
                               PO_ID OUT NUMBER,
                               PO_ERROR OUT NVARCHAR2
                               )
     IS
       vSec CS_EX_CLIENTES.ID%TYPE;
+      vSecCC CS_EX_CENTROS_CLIENTES.ID%TYPE;
+      vExiste NUMBER;
     BEGIN
+     vSec := 1;
 
-     SELECT CS_EX_SEC_CLIENTES.NEXTVAL
-     INTO vSec
-     FROM DUAL;
+         SELECT count(*) into vExiste 
+         FROM CS_EX_CLIENTES c
+         WHERE c.cedula = PI_CEDULA;
 
+     IF (vExiste = 0) THEN
+         SELECT CS_EX_SEC_CLIENTES.NEXTVAL
+         INTO vSec
+         FROM DUAL;
+
+        INSERT INTO CS_EX_CLIENTES VALUES (vSec,PI_CEDULA,PI_NOMBRE,PI_CELULAR,PI_DIRECCION,PI_EMAIL,SYSDATE);  
+     END IF;
      
-     INSERT INTO CS_EX_CLIENTES VALUES (vSec,PI_CEDULA,PI_NOMBRE,PI_CELULAR,PI_DIRECCION,PI_EMAIL,SYSDATE);  
+     SELECT count(*) into vExiste 
+     FROM CS_EX_CLIENTES c,  CS_EX_CENTROS_CLIENTES cc
+     WHERE c.cedula = PI_CEDULA
+       AND c.id = cc.id_cliente
+       AND cc.id_corporate = PI_ID_CORPORATE;
+
+     IF (vExiste = 0) THEN
+
+         SELECT id into vSec 
+         FROM CS_EX_CLIENTES c
+         WHERE c.cedula = PI_CEDULA;
+         
+         
+         SELECT CS_EX_SEC_CENTROS_CLIENT.NEXTVAL
+         INTO vSecCC
+         FROM DUAL;
      
+         INSERT INTO CS_EX_CENTROS_CLIENTES VALUES (vSecCC,PI_ID_CORPORATE ,vSec);  
+              
+     END IF;
      PO_ID := vSec;
      PO_ERROR := NULL;
     EXCEPTION
@@ -777,6 +832,7 @@ CREATE OR REPLACE PACKAGE BODY PKG_SMS AS
   FUNCTION F_LISTAR_CLIENTE(PI_ID IN CS_EX_CLIENTES.ID%TYPE, 
                             PI_CEDULA IN CS_EX_CLIENTES.CEDULA%TYPE,
                             PI_CELULAR IN CS_EX_CLIENTES.CELULAR%TYPE,
+                            PI_ID_CORPORATE IN CS_EX_CENTROS_CLIENTES.ID_CORPORATE%TYPE, 
                             PO_ERROR OUT NVARCHAR2
                             ) RETURN RESULSET
    IS
@@ -785,10 +841,12 @@ CREATE OR REPLACE PACKAGE BODY PKG_SMS AS
      
      OPEN vCursor FOR 
      SELECT * 
-     FROM CS_EX_CLIENTES c  
+     FROM CS_EX_CLIENTES c,CS_EX_CENTROS_CLIENTES cc  
      WHERE ((PI_ID IS NOT NULL AND c.ID = PI_ID) OR PI_ID IS NULL) 
       AND  c.cedula = NVL (PI_CEDULA, c.cedula)
-      AND  c.celular = NVL (PI_CELULAR, c.cedula);
+      AND  c.celular = NVL (PI_CELULAR, c.celular)
+      AND  c.id = cc.id_cliente
+      AND  cc.id_corporate = PI_ID_CORPORATE;
             
      RETURN (vCursor);
     EXCEPTION
@@ -973,6 +1031,218 @@ CREATE OR REPLACE PACKAGE BODY PKG_SMS AS
      
    END F_LISTAR_MENSAJES;
 
+   PROCEDURE P_INSERTA_UNIDAD(PI_NOMBRE IN CS_EX_UNIDAD.NOMBRE%TYPE,PO_ID OUT NUMBER,PO_ERROR OUT NVARCHAR2)
+    IS
+      vSec CS_EX_UNIDAD.ID%TYPE;
+   BEGIN
 
+     SELECT CS_EX_SEC_UNIDAD.NEXTVAL
+     INTO vSec
+     FROM DUAL;
+     
+     INSERT INTO CS_EX_UNIDAD VALUES (vSec, PI_NOMBRE);  
+     
+     PO_ID := vSec;
+     PO_ERROR := NULL;
+    EXCEPTION
+     WHEN OTHERS THEN
+       PO_ID := 0;
+       PO_ERROR := 'ERROR: ' || SQLCODE || '|' || SQLERRM;
+   END P_INSERTA_UNIDAD;
+
+   FUNCTION F_BUSCAR_UNIDAD(PI_ID IN CS_EX_UNIDAD.ID%TYPE,
+                            PI_NOMBRE IN CS_EX_UNIDAD.NOMBRE%TYPE,    
+                            PO_ERROR OUT NVARCHAR2
+   ) RETURN RESULSET
+   IS
+     vCursor RESULSET;
+
+    BEGIN
+
+     OPEN vCursor FOR      
+     SELECT * 
+     FROM CS_EX_UNIDAD u  
+     WHERE ((PI_ID IS NOT NULL AND u.ID = PI_ID) OR PI_ID IS NULL)
+        AND UPPER(u.NOMBRE) = UPPER(NVL(PI_NOMBRE,u.NOMBRE));  
+     
+     RETURN (vCursor);
+    EXCEPTION
+		WHEN NO_DATA_FOUND THEN
+			BEGIN
+				PO_ERROR := '0|NOT_DATA_FOUND';
+                RETURN NULL;
+			END;
+		WHEN OTHERS THEN
+			BEGIN
+				PO_ERROR := 'SQLCODE|' || SQLERRM;
+                RETURN NULL; 
+			END;
+     
+   END F_BUSCAR_UNIDAD;
+
+  FUNCTION F_ARMAR_SMS(PI_TIPO_MENSAJE IN CS_EX_PLANTILLAS.ID_TIPO_MENSAJE%TYPE,
+                       PI_ID_CLIENTE IN CS_EX_CLIENTES.ID%TYPE,    
+                       PI_SERVICIO IN CS_EX_UNIDAD.ID%TYPE,
+                       PI_FECHA IN DATE
+   ) RETURN VARCHAR
+   IS
+    vCadena NVARCHAR2(200);
+    vContenido cs_ex_plantillas.contenido%type;
+    vSql VARCHAR(200);
+    CURSOR vCursor IS select nombre_campo, nombre_tabla, clave,tipo_parametro from cs_ex_param_plantilla where id_plantilla = 1;
+    vCampo cs_ex_param_plantilla.NOMBRE_CAMPO%type;
+    vTabla cs_ex_param_plantilla.NOMBRE_TABLA%type;
+    vTipoParam cs_ex_param_plantilla.TIPO_PARAMETRO%type;
+    auxTabla cs_ex_param_plantilla.NOMBRE_TABLA%type;
+    vClave cs_ex_param_plantilla.CLAVE%type; 
+    auxClave cs_ex_param_plantilla.CLAVE%type; 
+    vServicio cs_ex_unidad.NOMBRE%type;
+
+    vResult NVARCHAR2(300);
+  
+    begin
+    
+    select contenido into vContenido 
+    from cs_ex_plantillas
+    where id_tipo_mensaje = pi_tipo_mensaje;
+
+    select nombre into vServicio 
+    from cs_ex_unidad
+    where id = PI_SERVICIO;
+
+    vContenido := vContenido || ' FROM ';
+
+   OPEN vCursor;
+   LOOP
+      FETCH vCursor INTO vCampo, vTabla, vClave, vTipoParam; 
+      EXIT WHEN vCursor%NOTFOUND;
+
+      IF (vTipoParam = 'V') THEN
+        vContenido := replace(vContenido, '|1' ||vCampo||'|2', vCampo || ' || ');
+        auxTabla := vTabla;
+        auxClave := vClave;      
+      ELSE
+        IF (vCampo = 'PI_FECHA') THEN
+          vContenido := replace(vContenido, vCampo, PI_FECHA);
+        ELSE 
+          IF (vCampo = 'PI_UNIDAD') THEN
+          vContenido := replace(vContenido, vCampo, vServicio); 
+          END IF;
+        END IF;
+      END IF;
+
+  END LOOP;
+
+  vContenido := replace(vContenido,'|| FROM', ' FROM ');
+  
+  vSql := 'SELECT ' || vContenido ||' ' || auxTabla || ' WHERE ' || auxClave || ' = ' ||  pi_id_cliente;
+
+  EXECUTE IMMEDIATE vSql INTO vResult;
+  
+  RETURN vResult;
+  
+  END F_ARMAR_SMS;
+
+   FUNCTION F_BUSCAR_PARAMETROS(PI_ID_UNIDAD IN CS_EX_UNIDAD.ID%TYPE,
+                            PI_ID_TIPO_MENSAJE IN CS_EX_TIPOS_MENSAJES.ID%TYPE,    
+                            PO_ERROR OUT NVARCHAR2
+   ) RETURN RESULSET
+   IS
+     vCursor RESULSET;
+
+    BEGIN
+
+     OPEN vCursor FOR      
+         SELECT C.ID, C.ID_UNIDAD, U.NOMBRE, C.FRECUENCIA, 
+             C.RANGO_INICIO, C.RANGO_FINAL, NVL(C.DIA_SEMANA,0) DIA_SEMANA, 
+             C.HORA, C.ID_TIPO_MENSAJE
+      FROM CS_EX_PARAMETROS C, CS_EX_UNIDAD U
+      WHERE C.ID_UNIDAD = U.ID
+      AND C.ID_UNIDAD = NVL(PI_ID_UNIDAD,C.ID_UNIDAD)
+      AND C.ID_TIPO_MENSAJE = NVL(PI_ID_TIPO_MENSAJE,C.ID_TIPO_MENSAJE);
+     
+     RETURN (vCursor);
+    EXCEPTION
+		WHEN NO_DATA_FOUND THEN
+			BEGIN
+				PO_ERROR := '0|NOT_DATA_FOUND';
+                RETURN NULL;
+			END;
+		WHEN OTHERS THEN
+			BEGIN
+				PO_ERROR := 'SQLCODE|' || SQLERRM;
+                RETURN NULL; 
+			END;
+     
+   END F_BUSCAR_PARAMETROS;
+
+
+  PROCEDURE P_INSERTA_MENSAJE_SMS( PI_ID_TIPO_MENSAJE IN CS_EX_TIPOS_MENSAJES.ID%TYPE,
+                                   PI_CEDULA          IN CS_EX_CLIENTES.CEDULA%TYPE,
+                                   PI_NOMBRE_UNIDAD   IN CS_EX_UNIDAD.NOMBRE%TYPE, 
+                                   PO_ID OUT NUMBER,
+                                   PO_ERROR OUT NVARCHAR2
+                              ) 
+    IS
+    vSec CS_EX_MENSAJES.ID%TYPE;
+    vId CS_EX_CLIENTES.ID%type;
+    vContenido CS_EX_MENSAJES.CONTENIDO%TYPE;
+    vIdPlantilla CS_EX_MENSAJES.ID_PLANTILLA%TYPE;
+    vIdUnidad CS_EX_UNIDAD.ID%TYPE;
+    BEGIN
+     
+     BEGIN
+         SELECT c.id 
+         INTO vId
+         FROM CS_EX_CLIENTES c
+         WHERE c.cedula = PI_CEDULA;
+     EXCEPTION
+     WHEN OTHERS THEN
+       PO_ID := 0;
+       PO_ERROR := 'ERROR: ' || SQLCODE || '|' || SQLERRM;
+     END;
+     
+     BEGIN
+         SELECT u.id 
+         INTO vIdUnidad
+         FROM CS_EX_UNIDAD u
+         WHERE UPPER(u.nombre) = UPPER(PI_NOMBRE_UNIDAD);
+     EXCEPTION
+     WHEN OTHERS THEN
+       PO_ID := 0;
+       PO_ERROR := 'ERROR: ' || SQLCODE || '|' || SQLERRM;
+     END;
+
+     BEGIN
+         SELECT p.id 
+         INTO vIdPlantilla
+         FROM CS_EX_PLANTILLAS p
+         WHERE p.id_tipo_mensaje =  PI_ID_TIPO_MENSAJE;
+     EXCEPTION
+     WHEN OTHERS THEN
+       PO_ID := 0;
+       PO_ERROR := 'ERROR: ' || SQLCODE || '|' || SQLERRM;
+     END;
+        
+     SELECT CS_EX_SEC_MENSAJES.NEXTVAL 
+     INTO vSec
+     FROM DUAL;
+     
+     vContenido := F_ARMAR_SMS(PI_ID_TIPO_MENSAJE,vId,vIdUnidad,SYSDATE);
+    
+     INSERT INTO CS_EX_MENSAJES  VALUES (vSec,SYSDATE,PI_ID_TIPO_MENSAJE,vId, vContenido,vIdPlantilla);  
+     
+     PO_ID := vSec;
+     PO_ERROR := NULL;
+    EXCEPTION
+     WHEN OTHERS THEN
+       PO_ID := 0;
+       PO_ERROR := 'ERROR: ' || SQLCODE || '|' || SQLERRM;
+     
+    END P_INSERTA_MENSAJE_SMS;
+
+
+    
+        
 END PKG_SMS;
 /
